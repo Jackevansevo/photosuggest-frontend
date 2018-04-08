@@ -1,0 +1,203 @@
+#logoHeader {
+  font-family: "Amatic SC", cursive;
+}
+
+#searchWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+#homeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+}
+
+#imageModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "Lato", sans-serif;
+  z-index: 100;
+  width: 80rem;
+  max-width: 90%;
+  background: #222222;
+  border-radius: 0.5rem;
+}
+
+.optionsRibbon {
+  display: flex;
+  font-family: "Lato", sans-serif;
+  padding: 0.5em;
+  align-items: baseline;
+}
+
+.optionCheckBox {
+  padding-right: 0.5em;
+}
+
+.model-content {
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+}
+
+#clearButton {
+  font-size: 0.7em;
+  opacity: 1;
+}
+
+#root > div {
+  height: 90vh;
+}
+
+#resultsHeader {
+  background-color: #fafafa;
+  border-bottom-color: #cecece;
+}
+
+#photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-gap: 0.1em;
+  justify-items: center;
+}
+
+.imageThumb {
+  object-fit: cover;
+}
+
+.imagePreview {
+  max-height: 600px;
+  max-width: 600px;
+}
+
+.imageContainer {
+  height: 16rem;
+  width: 16rem;
+  margin-bottom: 1em;
+}
+
+.amatic {
+  font-family: "Amatic SC", cursive;
+}
+
+.btn {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.btnBlack {
+  color: #999;
+  border-color: #000;
+  background-color: #111111;
+}
+
+.btnBlack:hover {
+  color: #ccc;
+}
+
+.aboutContainer {
+  background-color: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  border-style: solid;
+  border-width: 1px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2rem;
+  max-width: 32rem;
+  padding: 2rem;
+}
+
+#searchInputWrapper {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+}
+
+#searchInput {
+  flex: 1;
+  font-size: 1rem;
+  padding: 1rem 0 1rem 1rem;
+  background-color: #fff;
+  color: rgba(0, 0, 0, 0.8);
+  line-height: 1;
+  border: solid 0.125rem #eee;
+  border-right-width: 0;
+}
+
+#searchSubmitBtn {
+  cursor: pointer;
+  border-top: solid 0.125rem #eee;
+  border-bottom: solid 0.125rem #eee;
+  border-right: solid 0.125rem #eee;
+  border-left: none;
+  padding: 0 2em;
+}
+
+#cancelBtn {
+  cursor: pointer;
+  background-color: white;
+  border-top: solid 0.125rem #eee;
+  border-bottom: solid 0.125rem #eee;
+  border-right: 0;
+  padding: 0 2em;
+  border-left: 0;
+}
+
+#cancelBtn:focus {
+  color: firebrick;
+}
+
+#searchInputWrapper > input:focus,
+button:focus {
+  outline: none;
+}
+
+.photoDescription > a {
+  color: white;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: white;
+  min-width: 240px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  padding: 0.5em;
+  margin: 0em;
+  z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
+  border-radius: 0.2em;
+  display: block;
+}
+
+.dropdown-content > .optionCheckBox {
+  display: block;
+  padding-bottom: 1em;
+}
+
+.dropdown-button:hover {
+  background-color: #f2f2f2;
+}
