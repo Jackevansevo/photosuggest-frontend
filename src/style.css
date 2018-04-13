@@ -18,17 +18,10 @@
   width: 100vw;
 }
 
-#imageModal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+#imageGallery {
   font-family: "Lato", sans-serif;
-  z-index: 100;
-  width: 80rem;
-  max-width: 90%;
-  background: #222222;
-  border-radius: 0.5rem;
+  width: 100vw;
+  height: 100vh;
 }
 
 .optionsRibbon {
@@ -42,10 +35,10 @@
   padding-right: 0.5em;
 }
 
-.model-content {
+.modal-content {
   width: 100%;
   height: 100%;
-  padding: 0.5rem;
+  padding: 2%;
 }
 
 #clearButton {
@@ -74,8 +67,8 @@
 }
 
 .imagePreview {
-  max-height: 600px;
-  max-width: 600px;
+  max-height: 60%;
+  max-width: 60%;
 }
 
 .imageContainer {

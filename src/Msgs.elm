@@ -5,17 +5,18 @@ import Navigation exposing (Location)
 import RemoteData exposing (WebData)
 import Keyboard
 import Dom exposing (..)
+import Array exposing (Array)
 
 
 type Msg
     = UpdateQuery String
     | UrlChange Location
     | SearchSubmit
-    | FetchPhotos (WebData (List Photo))
+    | FetchPhotos (WebData (Array Photo))
     | ImageLoaded String
     | FocusOn String
     | FocusResult (Result Dom.Error ())
-    | ViewPhoto Photo
+    | ViewPhoto Int
     | ClearInput
     | KeyMsg Keyboard.KeyCode
     | NoOp

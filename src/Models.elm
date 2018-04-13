@@ -1,9 +1,8 @@
 module Models exposing (..)
 
 import RemoteData exposing (WebData)
-import Http
 import Dict
-import Set
+import Array exposing (Array)
 
 
 type Route
@@ -12,43 +11,15 @@ type Route
     | NotFoundRoute
 
 
-type alias Licenses =
-    Set.Set String
-
-
-type alias Sources =
-    Set.Set String
-
-
-type alias License =
-    { name : String
-    , url : String
-    }
-
-
-type alias Photo =
-    { url : String
-    , source : String
-    , owner : Maybe String
-    , description : Maybe String
-    , license : Maybe License
-    }
-
-
-type alias Params =
-    Dict.Dict String (Set.Set String)
-
-
 type alias Model =
     { query : String
     , previousSearch : String
-    , photos : WebData (List Photo)
+    , photos : WebData (Array Photo)
     , route : Route
-    , error : Maybe Http.Error
-    , viewing : Maybe Photo
+    , viewing : Maybe Int
     , license : String
     , filtered : Bool
-    , sources : Set.Set String
+    , sources : Sources
     }
 
 
@@ -58,22 +29,46 @@ initialModel route =
     , previousSearch = ""
     , photos = RemoteData.Loading
     , route = route
-    , error = Nothing
     , viewing = Nothing
-    , license = "public"
-    , sources = Set.singleton "flickr"
+    , license = "any"
+    , sources = Dict.fromList [ ( "flickr", True ), ( "bing", False ) ]
     , filtered = True
     }
 
 
-getQuery : Params -> String
-getQuery params =
-    case (Dict.get "q" params) of
-        Just vals ->
-            if Set.isEmpty vals then
-                ""
-            else
-                String.join "" (Set.toList vals)
+type alias Query =
+    String
 
-        Nothing ->
-            ""
+
+type alias License =
+    String
+
+
+type alias Sources =
+    Dict.Dict String Bool
+
+
+type alias PhotoLicense =
+    { name : String
+    , url : String
+    }
+
+
+type alias Photo =
+    { url : String
+    , thumbnail : String
+    , origin : String
+    , source : String
+    , owner : Maybe String
+    , title : Maybe String
+    , description : Maybe String
+    , license : Maybe PhotoLicense
+    }
+
+
+type alias Param =
+    List String
+
+
+type alias Params =
+    Dict.Dict String (List String)

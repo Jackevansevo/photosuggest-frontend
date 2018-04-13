@@ -2,16 +2,17 @@ module View exposing (..)
 
 import Json.Encode
 import Accessibility.Style exposing (invisible)
-import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput, onClick, onSubmit, on)
-import List
+import Html.Events exposing (onClick, onInput, onSubmit)
 import Models exposing (Model, Photo, Params)
 import Msgs exposing (..)
 import RemoteData exposing (WebData)
-import Set as S
 import Svg.Attributes exposing (d)
+import Utils exposing (capitalize)
+import Dict
+import Array exposing (Array)
+import String.Interpolate exposing (interpolate)
 
 
 view : Model -> Html Msg
@@ -41,17 +42,6 @@ page model =
 notFoundView : Html msg
 notFoundView =
     div [] [ text "Not found" ]
-
-
-resultsView : Model -> Html Msg
-resultsView model =
-    case model.error of
-        Just _ ->
-            div []
-                [ div [] [ text "Something went wrong" ] ]
-
-        Nothing ->
-            resultsPage model (imageGrid model)
 
 
 sourceIcon : String -> Html Msg
@@ -98,9 +88,30 @@ photoOwner photo =
         Just owner ->
             dl [ class "f6 lh-title mv2" ]
                 [ dt [ class "dib b" ]
-                    [ text "Owner:" ]
+                    [ span
+                        []
+                        [ i [ class "fas fa-user fa-fw pr1" ] [], text "Owner: " ]
+                    ]
                 , dd [ class "dib ml1" ]
                     [ text owner ]
+                ]
+
+        Nothing ->
+            text ""
+
+
+photoTitle : Photo -> Html Msg
+photoTitle photo =
+    case photo.title of
+        Just title ->
+            dl [ class "f6 lh-title mv2" ]
+                [ dt [ class "dib b" ]
+                    [ span
+                        []
+                        [ i [ class "fas fa-file-alt fa-fw pr1" ] [], text "Title: " ]
+                    ]
+                , dd [ class "dib ml1" ]
+                    [ text title ]
                 ]
 
         Nothing ->
@@ -113,13 +124,37 @@ licenseInfo photo =
         Just license ->
             dl [ class "f6 lh-title mv2" ]
                 [ dt [ class "dib b" ]
-                    [ text "License:" ]
+                    [ span
+                        []
+                        [ i [ class "fas fa-gavel fa-fw pr1" ] [], text "License: " ]
+                    ]
                 , dd [ class "dib ml1" ]
-                    [ a [ href license.url, class "white" ] [ text license.name ] ]
+                    [ a [ href license.url ] [ text license.name ] ]
                 ]
 
         Nothing ->
-            text ""
+            dl [ class "f6 lh-title mv2" ]
+                [ dt [ class "dib b" ]
+                    [ span
+                        []
+                        [ i [ class "fas fa-gavel fa-fw pr1" ] [], text "License: " ]
+                    ]
+                , dd [ class "dib ml1" ]
+                    [ text "License unknown" ]
+                ]
+
+
+photoSource : Photo -> Html Msg
+photoSource photo =
+    dl [ class "f6 lh-title mv2" ]
+        [ dt [ class "dib b" ]
+            [ span
+                []
+                [ i [ class "fas fa-globe fa-fw pr1" ] [], text "Source: " ]
+            ]
+        , dd [ class "dib ml1" ]
+            [ text (capitalize True photo.source) ]
+        ]
 
 
 textHtml : String -> Attribute Msg
@@ -128,70 +163,194 @@ textHtml s =
         |> Html.Attributes.property "innerHTML"
 
 
-copyButton : String -> Html Msg
-copyButton url =
-    a [ class "btn btnBlack mr2" ]
-        [ span [] [ i [ class "fas fa-link pr2" ] [], text "Copy" ] ]
+attributionTemplate : String
+attributionTemplate =
+    let
+        text =
+            """
+<h4>
+  <span class="title">{0}</span>
+  <i>by <span class="creator">{1}</span></i>
+</h4>
+<p class="info">
+  Licensed under
+  <a class="license" href="{2}">
+    {3}
+  </a>
+</p>
+<p>
+  <a class="foreign_landing_url" href="{4}">
+    Original source
+  </a>
+</p>
+"""
+    in
+        String.trim text
+
+
+attributionText : Photo -> String
+attributionText photo =
+    case ( photo.title, photo.license, photo.owner ) of
+        ( Just title, Just license, Just owner ) ->
+            interpolate attributionTemplate [ title, owner, license.url, license.name ]
+
+        ( _, _, _ ) ->
+            ""
+
+
+photoAttribution : Photo -> Html Msg
+photoAttribution photo =
+    if requiresAttribution photo then
+        div [ class "clip" ]
+            [ pre [ id "attribution" ] [ text (attributionText photo) ] ]
+    else
+        text ""
+
+
+requiresAttribution : Photo -> Bool
+requiresAttribution photo =
+    case photo.license of
+        Just license ->
+            case license.name of
+                "Attribution-NonCommercial-ShareAlike License" ->
+                    True
+
+                "Attribution-NonCommercial License" ->
+                    True
+
+                "Attribution-NonCommercial-NoDerivs License" ->
+                    True
+
+                "Attribution License" ->
+                    True
+
+                "Attribution-ShareAlike License" ->
+                    True
+
+                "Attribution-NoDerivs License" ->
+                    True
+
+                _ ->
+                    False
+
+        Nothing ->
+            False
+
+
+copyButton : Photo -> Html Msg
+copyButton photo =
+    if requiresAttribution photo then
+        a
+            [ class "btn btnBlack mr2 copy-button pointer"
+            , attribute "data-clipboard-target" "#attribution"
+            ]
+            [ span [] [ i [ class "fas fa-copy pr2" ] [], text "Copy" ] ]
+    else
+        text ""
+
+
+visitButton : String -> Html Msg
+visitButton url =
+    a [ class "btn btnBlack mr2", href url, target "_blank" ]
+        [ span [] [ i [ class "fas fa-globe pr2" ] [], text "Visit" ] ]
+
+
+closeButton : Html Msg
+closeButton =
+    a [ class "btn btnBlack mr2 pointer", onClick StopViewing ]
+        [ span [] [ i [ class "fas fa-times" ] [] ] ]
 
 
 viewButton : String -> Html Msg
 viewButton url =
-    a [ class "btn btnBlack mr2", href url ]
+    a [ class "btn btnBlack mr2", href url, target "_blank" ]
         [ span [] [ i [ class "fas fa-search pr2" ] [], text "View" ] ]
 
 
-imageModal : Photo -> Html Msg
-imageModal photo =
-    div
-        [ id "imageModal" ]
-        [ div [ class "modal-content" ]
-            [ span
-                [ class "pointer close f2 moon-gray absolute right-1 top-1"
-                , onClick StopViewing
-                ]
-                [ text "×" ]
-            , div [ class "flex ma4" ]
-                [ img [ class "imagePreview", src photo.url ] []
-                , div [ class "white flex flex-column items-start flex-start mb2 pl4" ]
-                    [ span [ class "white f2 pb2" ]
-                        [ text "Details" ]
-                    , div
-                        [ style [ ( "flex-grow", "1" ) ] ]
-                        [ dl [ class "f6 lh-title mv2" ]
-                            [ dt [ class "dib b" ]
-                                [ text "Source:" ]
-                            , dd [ class "dib ml1" ]
-                                [ text photo.source ]
-                            ]
-                        , photoDescription photo
-                        , photoOwner photo
-                        , licenseInfo photo
-                        ]
-                    , div []
-                        [ viewButton photo.url
-                        , copyButton photo.url
-                        ]
-                    ]
-                ]
-            ]
-        ]
+saveButton : String -> Html Msg
+saveButton url =
+    a [ class "btn btnBlack mr2" ]
+        [ span [] [ i [ class "fas fa-star pr2" ] [], text "Save" ] ]
 
 
-getParam : Params -> String -> String -> Bool
-getParam params key val =
-    case (Dict.get key params) of
-        Just values ->
-            S.member val values
+previousImage : Int -> Array Photo -> Html Msg
+previousImage index photos =
+    case Array.get (index - 1) photos of
+        Just photo ->
+            button
+                [ class "btn btnBlack pointer"
+                , onClick (Msgs.KeyMsg 37)
+                ]
+                [ span [] [ i [ class "fas fa-arrow-left fa-2x" ] [] ] ]
 
         Nothing ->
-            False
+            div [] []
+
+
+nextImage : Int -> Array Photo -> Html Msg
+nextImage index photos =
+    case Array.get (index + 1) photos of
+        Just photo ->
+            button
+                [ class "btn btnBlack pointer"
+                , onClick (Msgs.KeyMsg 39)
+                ]
+                [ span [] [ i [ class "fas fa-arrow-right fa-2x" ] [] ] ]
+
+        Nothing ->
+            div [] []
+
+
+licenseTerms : Photo -> Html Msg
+licenseTerms photo =
+    -- [TODO] Implement these please
+    case photo.license of
+        Just license ->
+            text "awesome"
+
+        Nothing ->
+            text "unknown"
+
+
+imageGallery : Photo -> Model -> Html Msg
+imageGallery photo model =
+    let
+        -- Reference data for previous/next buttons
+        index =
+            Maybe.withDefault 0 model.viewing
+
+        photos =
+            RemoteData.withDefault Array.empty model.photos
+    in
+        div
+            [ id "imageGallery", class "w100 h100 flex flex-column bg-black" ]
+            [ div [ class "w-100 pv3 flex justify-center ph2" ]
+                [ visitButton photo.origin
+                , viewButton photo.url
+                , copyButton photo
+                , saveButton photo.url
+                , closeButton
+                ]
+            , div [ class "flex items-center justify-between h-100 pa3", style [ ( "flex-grow", "1" ) ] ]
+                [ previousImage index photos
+                , img [ class "imagePreview", src photo.url, alt "wew" ] []
+                , nextImage index photos
+                ]
+            , div [ class "bg-moon-gray w-100 ph3" ]
+                [ photoSource photo
+                , photoTitle photo
+                , photoOwner photo
+                , licenseInfo photo
+                , photoAttribution photo
+                ]
+            ]
 
 
 optionsRibbon : Model -> Html Msg
 optionsRibbon model =
     div
         [ class "items-baseline optionsRibbon mid-gray" ]
-        [ span [ class "pr2 dib" ]
+        [ span [ class "pr3 dib" ]
             [ i [ class "fas fa-filter fa-fw pr1" ] []
             , span [ class "b" ] [ text "Filters" ]
             ]
@@ -211,8 +370,8 @@ optionsRibbon model =
                         ]
                     , class "f6"
                     ]
-                    [ (dropDownButton "Flickr" (ToggleSource "flickr") model)
-                    , (dropDownButton "Bing" (ToggleSource "bing") model)
+                    [ (dropDownButton "flickr" model)
+                    , (dropDownButton "bing" model)
                     ]
                 ]
             ]
@@ -232,11 +391,12 @@ optionsRibbon model =
                         ]
                     , class "f6"
                     ]
-                    [ (licenseButton "Any" UpdateLicense model)
-                    , (licenseButton "Share" UpdateLicense model)
-                    , (licenseButton "Share Commercially" UpdateLicense model)
-                    , (licenseButton "Modify" UpdateLicense model)
-                    , (licenseButton "Modify Commercially" UpdateLicense model)
+                    [ (licenseButton "Any" model)
+                    , (licenseButton "Public" model)
+                    , (licenseButton "Share" model)
+                    , (licenseButton "Share Commercially" model)
+                    , (licenseButton "Modify" model)
+                    , (licenseButton "Modify Commercially" model)
                     ]
                 ]
             ]
@@ -246,54 +406,44 @@ optionsRibbon model =
 tick : Bool -> Html Msg
 tick val =
     if val then
-        span [ class "fas fa-check" ] []
+        i [ class "fas fa-check" ] []
     else
         text ""
 
 
-dropDownButton : String -> Msg -> { a | sources : S.Set String } -> Html Msg
-dropDownButton description msg model =
+dropDownButton : String -> Model -> Html Msg
+dropDownButton source model =
     let
-        thing =
-            String.toLower description
-
         btnStyle =
-            if (S.member thing model.sources) then
+            if (Maybe.withDefault False (Dict.get source model.sources)) then
                 style [ ( "font-weight", "bold" ), ( "color", "black" ) ]
             else
                 style []
 
         ticked =
-            tick (S.member thing model.sources)
+            tick (Maybe.withDefault False (Dict.get source model.sources))
     in
         li
             [ class "dropdown-button pointer"
-            , onClick msg
+            , onClick (ToggleSource source)
             , btnStyle
             ]
             [ span
                 [ class "flex justify-between pv3 ph2 dropdown-button" ]
-                [ span [] [ text description ], ticked ]
+                [ span [] [ text (capitalize True source) ], ticked ]
             ]
 
 
 matchLicenseDescription : String -> String
 matchLicenseDescription desc =
-    case desc of
-        "Any" ->
-            "public"
-
-        _ ->
-            String.join "" (String.split " " (String.toLower desc))
+    String.join "" (String.split " " (String.toLower desc))
 
 
-licenseButton description msg model =
+licenseButton : String -> Model -> Html Msg
+licenseButton description model =
     let
         licenseParam =
             matchLicenseDescription description
-
-        ticked =
-            tick (model.license == licenseParam)
 
         btnStyle =
             if model.license == licenseParam then
@@ -303,48 +453,56 @@ licenseButton description msg model =
     in
         li
             [ class "dropdown-button pointer"
-            , onClick (msg licenseParam)
+            , onClick (UpdateLicense licenseParam)
             , btnStyle
             ]
             [ span
                 [ class "flex justify-between pv3 ph2 dropdown-button" ]
-                [ span [] [ text description ], ticked ]
+                [ span []
+                    [ text description ]
+                , tick (model.license == licenseParam)
+                ]
             ]
 
 
-resultsPage : Model -> Html Msg -> Html Msg
-resultsPage model html =
-    let
-        viewImage =
-            case model.viewing of
-                Just photo ->
-                    (imageModal photo)
-
-                Nothing ->
-                    text ""
-    in
-        div [ class "h-100" ]
-            [ div
-                [ class "pv2 ph3 flex justify-between items-center bb"
-                , id "resultsHeader"
-                ]
-                [ div [ class "w-100 flex items-center" ]
-                    [ a [ href "/", class "mr3" ]
-                        [ img
-                            [ src "shutter.svg"
-                            , Svg.Attributes.width "50"
-                            , Svg.Attributes.height "50"
-                            , class "dim"
-                            ]
-                            []
+imageResults : Model -> Html Msg
+imageResults model =
+    div [ class "h-100" ]
+        [ div
+            [ class "pv2 ph3 flex justify-between items-center bb"
+            , id "resultsHeader"
+            ]
+            [ div [ class "w-100 flex items-center" ]
+                [ a [ href "/", class "mr3" ]
+                    [ img
+                        [ src "shutter.svg"
+                        , Svg.Attributes.width "50"
+                        , Svg.Attributes.height "50"
+                        , class "dim"
                         ]
-                    , span [ class "mw7 w-100" ] [ (searchBar model) ]
+                        []
                     ]
+                , span [ class "mw7 w-100" ] [ (searchBar model) ]
                 ]
-            , (optionsRibbon model)
-            , viewImage
-            , html
             ]
+        , (optionsRibbon model)
+        , (imageGrid model)
+        ]
+
+
+resultsView : Model -> Html Msg
+resultsView model =
+    case ( model.viewing, model.photos ) of
+        ( Just index, RemoteData.Success photos ) ->
+            case Array.get index photos of
+                Just photo ->
+                    (imageGallery photo model)
+
+                _ ->
+                    imageResults model
+
+        ( _, _ ) ->
+            imageResults model
 
 
 checkbox : String -> Msg -> Bool -> Html Msg
@@ -363,45 +521,39 @@ checkbox description msg default =
 
 imageGrid : Model -> Html Msg
 imageGrid model =
-    let
-        photoThumbnail ( index, photo ) =
-            a [ class "imageContainer", onClick (ViewPhoto photo) ]
-                [ img
-                    [ src photo.url
-                    , class "imageThumb w-100 h-100 dim"
-                    ]
-                    []
-                ]
-    in
-        case model.photos of
-            RemoteData.Success photos ->
-                if List.isEmpty photos then
-                    div [ class "flex flex-column items-center justify-center h-100 bg-washed-yellow" ]
-                        [ img
-                            [ class "pb4"
-                            , src "search.svg"
-                            , Svg.Attributes.width "150"
-                            , Svg.Attributes.height "150"
+    case model.photos of
+        RemoteData.Success photos ->
+            if Array.isEmpty photos then
+                let
+                    text =
+                        "No matches found for: " ++ "'" ++ model.previousSearch ++ "'"
+                in
+                    messageView text "search.svg"
+            else
+                let
+                    photoThumbnail ( index, photo ) =
+                        a [ class "imageContainer", onClick (ViewPhoto index) ]
+                            [ img
+                                [ src photo.thumbnail
+                                , class "imageThumb w-100 h-100 dim"
+                                ]
+                                []
                             ]
-                            []
-                        , h1 [ class "fw6 f3 f2-ns lh-title mt0 mb3 amatic" ]
-                            [ text ("No matches found for: " ++ "'" ++ model.previousSearch ++ "'") ]
-                        ]
-                else
+                in
                     div
                         [ id "photoGrid"
                         , class "flex flex-wrap justify-center items-start"
                         ]
-                        (List.map photoThumbnail (List.indexedMap (,) photos))
+                        (Array.toList (Array.map photoThumbnail (Array.indexedMap (,) photos)))
 
-            RemoteData.Loading ->
-                loadingView
+        RemoteData.Loading ->
+            loadingView
 
-            RemoteData.NotAsked ->
-                text ""
+        RemoteData.NotAsked ->
+            text ""
 
-            RemoteData.Failure error ->
-                (errorView error)
+        RemoteData.Failure error ->
+            (errorView error)
 
 
 loadingView : Html msg
@@ -414,19 +566,24 @@ loadingView =
         ]
 
 
-errorView : error -> Html msg
-errorView error =
+messageView : String -> String -> Html msg
+messageView message svg =
     div [ class "flex flex-column items-center justify-center h-100 bg-washed-yellow" ]
         [ img
             [ class "pb4"
-            , src "bug.svg"
+            , src svg
             , Svg.Attributes.width "150"
             , Svg.Attributes.height "150"
             ]
             []
         , h1 [ class "fw6 f3 f2-ns lh-title mt0 mb3 amatic" ]
-            [ text "Something went wrong" ]
+            [ text message ]
         ]
+
+
+errorView : error -> Html msg
+errorView error =
+    messageView (toString error) "bug.svg"
 
 
 aboutView : Model -> Html msg

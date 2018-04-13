@@ -20,21 +20,29 @@ init location =
     in
         case initalRoute of
             HomeRoute query license ->
-                case query of
-                    Just query ->
-                        let
-                            startModel =
-                                initialModel initalRoute
+                let
+                    model =
+                        initialModel initalRoute
+                in
+                    case ( query, license ) of
+                        ( Just query, Just license ) ->
+                            ( { model
+                                | query = query
+                                , previousSearch = query
+                                , license = license
+                              }
+                            , searchImage query license model.sources
+                            )
 
-                            newModel =
-                                { startModel | query = query, previousSearch = query }
-                        in
-                            ( newModel, searchImage newModel )
+                        ( Just query, _ ) ->
+                            ( { model | query = query }
+                            , searchImage query "" model.sources
+                            )
 
-                    Nothing ->
-                        ( initialModel initalRoute
-                        , Task.attempt (always Msgs.NoOp) <| Dom.focus "searchInput"
-                        )
+                        ( _, _ ) ->
+                            ( initialModel initalRoute
+                            , Task.attempt (always Msgs.NoOp) <| Dom.focus "searchInput"
+                            )
 
             _ ->
                 ( initialModel initalRoute, Cmd.none )
