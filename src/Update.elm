@@ -7,6 +7,7 @@ import Navigation exposing (newUrl)
 import Commands exposing (searchImage)
 import RemoteData exposing (RemoteData(..))
 import Dom
+import Dom.Scroll
 import Task
 import Dict
 import Array
@@ -15,18 +16,15 @@ import Array
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msgs.ToggleFilter ->
-            ( { model | filtered = (not model.filtered) }, Cmd.none )
-
         Msgs.ToggleSource source ->
             let
                 newSources =
                     Dict.update source (Maybe.map not) model.sources
             in
-                ( { model | sources = newSources }, Cmd.none )
+                update (Msgs.SearchSubmit) { model | sources = newSources }
 
         Msgs.UpdateLicense license ->
-            ( { model | license = license }, newUrl ("/?q=" ++ model.query ++ "&license=" ++ license) )
+            update (Msgs.SearchSubmit) { model | license = license }
 
         Msgs.UpdateQuery newQuery ->
             ( { model | query = newQuery }, Cmd.none )
@@ -40,62 +38,38 @@ update msg model =
                     HomeRoute query license ->
                         case ( query, license ) of
                             ( Just query, Just license ) ->
-                                let
-                                    newModel =
-                                        { model
-                                            | route = newRoute
-                                            , license = license
-                                            , query = query
-                                            , photos = Loading
-                                            , previousSearch = query
-                                            , viewing = Nothing
-                                        }
-                                in
-                                    ( newModel, searchImage query model.license model.sources )
-
-                            ( _, _ ) ->
                                 ( { model
                                     | route = newRoute
-                                    , query = ""
-                                    , photos = Loading
-                                    , viewing = Nothing
+                                    , query = query
+                                    , license = license
                                   }
-                                , Task.attempt (always Msgs.NoOp) <| Dom.focus "searchInput"
+                                , searchImage query license model.sources
+                                )
+
+                            ( _, _ ) ->
+                                ( { model | route = newRoute, query = "" }
+                                , Task.attempt (always Msgs.NoOp) <|
+                                    Dom.focus "searchInput"
                                 )
 
                     _ ->
-                        -- Update the route by default
                         ( { model | route = newRoute }, Cmd.none )
 
         Msgs.KeyMsg code ->
             case ( model.route, model.viewing, model.photos ) of
                 ( HomeRoute query _, Just index, RemoteData.Success photos ) ->
                     if code == 27 then
-                        -- Escape Key
-                        ( { model | viewing = Nothing }, Cmd.none )
+                        update (Msgs.StopViewing index) model
                     else
-                        let
-                            newIndex =
-                                case code of
-                                    37 ->
-                                        index - 1
+                        case code of
+                            37 ->
+                                update (Msgs.ViewPhoto (index - 1)) model
 
-                                    39 ->
-                                        index + 1
+                            39 ->
+                                update (Msgs.ViewPhoto (index + 1)) model
 
-                                    _ ->
-                                        index
-                        in
-                            let
-                                nextPhoto =
-                                    Array.get newIndex photos
-                            in
-                                case nextPhoto of
-                                    Just photo ->
-                                        ( { model | viewing = Just newIndex }, Cmd.none )
-
-                                    Nothing ->
-                                        ( model, Cmd.none )
+                            _ ->
+                                ( model, Cmd.none )
 
                 ( _, _, _ ) ->
                     ( model, Cmd.none )
@@ -108,15 +82,28 @@ update msg model =
             if String.isEmpty model.query then
                 ( model, Cmd.none )
             else
-                ( model, newUrl ("/?q=" ++ model.query ++ "&license=" ++ model.license) )
+                ( model
+                , newUrl ("/?q=" ++ model.query ++ "&license=" ++ model.license)
+                )
 
         Msgs.ClearInput ->
-            ( { model | query = "" }, Task.attempt (always Msgs.NoOp) <| Dom.focus "searchInput" )
+            ( { model | query = "" }
+            , Task.attempt (always Msgs.NoOp) <| Dom.focus "searchInput"
+            )
 
         Msgs.ViewPhoto index ->
-            ( { model | viewing = Just index }, Cmd.none )
+            let
+                photos =
+                    RemoteData.withDefault Array.empty model.photos
+            in
+                case Array.get index photos of
+                    Just photo ->
+                        ( { model | viewing = Just index }, Cmd.none )
 
-        Msgs.StopViewing ->
+                    Nothing ->
+                        ( model, Cmd.none )
+
+        Msgs.StopViewing index ->
             ( { model | viewing = Nothing }, Cmd.none )
 
         _ ->

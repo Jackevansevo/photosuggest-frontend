@@ -4,7 +4,6 @@ import Models exposing (Photo)
 import Navigation exposing (Location)
 import RemoteData exposing (WebData)
 import Keyboard
-import Dom exposing (..)
 import Array exposing (Array)
 
 
@@ -13,14 +12,10 @@ type Msg
     | UrlChange Location
     | SearchSubmit
     | FetchPhotos (WebData (Array Photo))
-    | ImageLoaded String
-    | FocusOn String
-    | FocusResult (Result Dom.Error ())
     | ViewPhoto Int
     | ClearInput
     | KeyMsg Keyboard.KeyCode
     | NoOp
-    | StopViewing
+    | StopViewing Int
     | UpdateLicense String
     | ToggleSource String
-    | ToggleFilter

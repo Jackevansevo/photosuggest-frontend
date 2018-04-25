@@ -129,7 +129,7 @@ licenseInfo photo =
                         [ i [ class "fas fa-gavel fa-fw pr1" ] [], text "License: " ]
                     ]
                 , dd [ class "dib ml1" ]
-                    [ a [ href license.url ] [ text license.name ] ]
+                    [ a [ href license.url, target "_link" ] [ text license.name ] ]
                 ]
 
         Nothing ->
@@ -153,7 +153,7 @@ photoSource photo =
                 [ i [ class "fas fa-globe fa-fw pr1" ] [], text "Source: " ]
             ]
         , dd [ class "dib ml1" ]
-            [ text (capitalize True photo.source) ]
+            [ a [ href photo.origin, target "_blank" ] [ text (capitalize True photo.source) ] ]
         ]
 
 
@@ -255,16 +255,10 @@ visitButton url =
         [ span [] [ i [ class "fas fa-globe pr2" ] [], text "Visit" ] ]
 
 
-closeButton : Html Msg
-closeButton =
-    a [ class "btn btnBlack mr2 pointer", onClick StopViewing ]
+closeButton : Int -> Html Msg
+closeButton index =
+    a [ class "white pointer absolute right-2 top-2", onClick (StopViewing index) ]
         [ span [] [ i [ class "fas fa-times" ] [] ] ]
-
-
-viewButton : String -> Html Msg
-viewButton url =
-    a [ class "btn btnBlack mr2", href url, target "_blank" ]
-        [ span [] [ i [ class "fas fa-search pr2" ] [], text "View" ] ]
 
 
 saveButton : String -> Html Msg
@@ -278,7 +272,7 @@ previousImage index photos =
     case Array.get (index - 1) photos of
         Just photo ->
             button
-                [ class "btn btnBlack pointer"
+                [ class "btn btnBlack pointer absolute left-1"
                 , onClick (Msgs.KeyMsg 37)
                 ]
                 [ span [] [ i [ class "fas fa-arrow-left fa-2x" ] [] ] ]
@@ -292,7 +286,7 @@ nextImage index photos =
     case Array.get (index + 1) photos of
         Just photo ->
             button
-                [ class "btn btnBlack pointer"
+                [ class "btn btnBlack pointer absolute right-1"
                 , onClick (Msgs.KeyMsg 39)
                 ]
                 [ span [] [ i [ class "fas fa-arrow-right fa-2x" ] [] ] ]
@@ -323,18 +317,22 @@ imageGallery photo model =
             RemoteData.withDefault Array.empty model.photos
     in
         div
-            [ id "imageGallery", class "w100 h100 flex flex-column bg-black" ]
-            [ div [ class "w-100 pv3 flex justify-center ph2" ]
-                [ visitButton photo.origin
-                , viewButton photo.url
-                , copyButton photo
-                , saveButton photo.url
-                , closeButton
+            [ id "imageGallery"
+            , class "w100 h100 flex flex-column justify-center items-center bg-black"
+            ]
+            [ closeButton index
+            , previousImage index photos
+            , nextImage index photos
+            , div
+                [ class "w-100 flex items-center"
+                , style [ ( "flex-grow", "1" ) ]
                 ]
-            , div [ class "flex items-center justify-between h-100 pa3", style [ ( "flex-grow", "1" ) ] ]
-                [ previousImage index photos
-                , img [ class "imagePreview", src photo.url, alt "wew" ] []
-                , nextImage index photos
+                [ img
+                    [ class "imagePreview"
+                    , src photo.url
+                    , style [ ( "margin", "auto" ) ]
+                    ]
+                    []
                 ]
             , div [ class "bg-moon-gray w-100 ph3" ]
                 [ photoSource photo
@@ -532,10 +530,14 @@ imageGrid model =
             else
                 let
                     photoThumbnail ( index, photo ) =
-                        a [ class "imageContainer", onClick (ViewPhoto index) ]
+                        a
+                            [ class "imageContainer"
+                            , onClick (ViewPhoto index)
+                            ]
                             [ img
                                 [ src photo.thumbnail
                                 , class "imageThumb w-100 h-100 dim"
+                                , id ("photo" ++ (toString index))
                                 ]
                                 []
                             ]
@@ -543,6 +545,7 @@ imageGrid model =
                     div
                         [ id "photoGrid"
                         , class "flex flex-wrap justify-center items-start"
+                        , style [ ( "overflow-y", "scroll" ) ]
                         ]
                         (Array.toList (Array.map photoThumbnail (Array.indexedMap (,) photos)))
 
