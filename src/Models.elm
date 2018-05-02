@@ -17,7 +17,6 @@ type alias Model =
     , route : Route
     , viewing : Maybe Int
     , license : String
-    , filtered : Bool
     , sources : Sources
     }
 
@@ -25,13 +24,12 @@ type alias Model =
 initialModel : Route -> Model
 initialModel route =
     { query = ""
-    , previousSearch = ""
+    , previousQuery = ""
     , photos = RemoteData.Loading
     , route = route
     , viewing = Nothing
     , license = "any"
     , sources = Dict.fromList [ ( "flickr", True ), ( "bing", False ) ]
-    , filtered = True
     }
 
 
