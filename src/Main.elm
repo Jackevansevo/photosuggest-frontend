@@ -28,7 +28,7 @@ init location =
                         ( Just query, Just license ) ->
                             ( { model
                                 | query = query
-                                , previousSearch = query
+                                , previousQuery = query
                                 , license = license
                               }
                             , searchImage query license model.sources

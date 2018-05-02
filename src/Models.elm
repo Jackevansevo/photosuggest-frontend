@@ -13,7 +13,7 @@ type Route
 
 type alias Model =
     { query : String
-    , previousSearch : String
+    , previousQuery : String
     , photos : WebData (Array Photo)
     , route : Route
     , viewing : Maybe Int

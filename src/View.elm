@@ -524,7 +524,7 @@ imageGrid model =
             if Array.isEmpty photos then
                 let
                     text =
-                        "No matches found for: " ++ "'" ++ model.previousSearch ++ "'"
+                        "No matches found for: " ++ "'" ++ model.previousQuery ++ "'"
                 in
                     messageView text "search.svg"
             else
