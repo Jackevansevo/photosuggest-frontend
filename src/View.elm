@@ -41,19 +41,6 @@ notFoundView =
     div [] [ text "Not found" ]
 
 
-sourceIcon : String -> Html Msg
-sourceIcon source =
-    case String.toLower source of
-        "flickr" ->
-            i [ class "fab fa-flickr" ] []
-
-        "bing" ->
-            i [ class "fab fa-windows" ] []
-
-        _ ->
-            i [ class "fab fa-question-circle" ] []
-
-
 photoDescription : Photo -> Html Msg
 photoDescription photo =
     case photo.description of
@@ -234,34 +221,10 @@ requiresAttribution photo =
             False
 
 
-copyButton : Photo -> Html Msg
-copyButton photo =
-    if requiresAttribution photo then
-        a
-            [ class "btn btnBlack mr2 copy-button pointer"
-            , attribute "data-clipboard-target" "#attribution"
-            ]
-            [ span [] [ i [ class "fas fa-copy pr2" ] [], text "Copy" ] ]
-    else
-        text ""
-
-
-visitButton : String -> Html Msg
-visitButton url =
-    a [ class "btn btnBlack mr2", href url, target "_blank" ]
-        [ span [] [ i [ class "fas fa-globe pr2" ] [], text "Visit" ] ]
-
-
 closeButton : Int -> Html Msg
 closeButton index =
     a [ class "white pointer absolute right-2 top-2", onClick (StopViewing index) ]
         [ span [] [ i [ class "fas fa-times" ] [] ] ]
-
-
-saveButton : String -> Html Msg
-saveButton url =
-    a [ class "btn btnBlack mr2" ]
-        [ span [] [ i [ class "fas fa-star pr2" ] [], text "Save" ] ]
 
 
 previousImage : Int -> Array Photo -> Html Msg
@@ -292,17 +255,6 @@ nextImage index photos =
             div [] []
 
 
-licenseTerms : Photo -> Html Msg
-licenseTerms photo =
-    -- [TODO] Implement these please
-    case photo.license of
-        Just license ->
-            text "awesome"
-
-        Nothing ->
-            text "unknown"
-
-
 imageGallery : Photo -> Model -> Html Msg
 imageGallery photo model =
     let
@@ -331,14 +283,32 @@ imageGallery photo model =
                     ]
                     []
                 ]
-            , div [ class "bg-moon-gray w-100 ph3" ]
-                [ photoSource photo
-                , photoTitle photo
-                , photoOwner photo
-                , licenseInfo photo
-                , photoAttribution photo
+            , div [ class "bg-moon-gray w-100 ph3 flex justify-between items-center" ]
+                [ div []
+                    [ photoSource photo
+                    , photoTitle photo
+                    , photoOwner photo
+                    , licenseInfo photo
+                    , photoAttribution photo
+                    ]
+                , div [] [ copyAttributionButton photo ]
                 ]
             ]
+
+
+copyAttributionButton : Photo -> Html Msg
+copyAttributionButton photo =
+    if requiresAttribution photo then
+        button
+            [ id "copyAttributionButton"
+            , class "bg-green white hover-bg-dark-green bg-animate copy-button pointer"
+            , attribute "data-clipboard-target" "#attribution"
+            ]
+            [ i [ class "fas fa-copy pr3" ] []
+            , span [ class "b" ] [ text "Copy Attribution" ]
+            ]
+    else
+        text ""
 
 
 optionsRibbon : Model -> Html Msg
