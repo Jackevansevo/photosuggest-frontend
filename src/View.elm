@@ -32,9 +32,6 @@ page model =
                 Nothing ->
                     homeView model
 
-        Models.AboutRoute ->
-            aboutView model
-
         Models.NotFoundRoute ->
             notFoundView
 
@@ -587,31 +584,6 @@ messageView message svg =
 errorView : error -> Html msg
 errorView error =
     messageView (toString error) "bug.svg"
-
-
-aboutView : Model -> Html msg
-aboutView model =
-    div [ class "aboutContainer" ]
-        [ h1 [ class "tc f4" ]
-            [ text "About" ]
-        , p [ class "lh-copy measure center f6 black-70" ]
-            [ text "Photosuggest is a project to help find permissively licensed images" ]
-        , p [ class "lh-copy measure center f6 black-70" ]
-            [ text "Icons made by "
-            , a [ href "http://www.freepik.com", title "Freepik" ]
-                [ text "Freepik" ]
-            , text " from "
-            , a [ href "https://www.flaticon.com/", title "Flaticon" ]
-                [ text "www.flaticon.com" ]
-            , text " is licensed by "
-            , a
-                [ href "http://creativecommons.org/licenses/by/3.0/"
-                , target "_blank"
-                , title "Creative Commons BY 3.0"
-                ]
-                [ text "CC 3.0 BY" ]
-            ]
-        ]
 
 
 homeView : Model -> Html Msg

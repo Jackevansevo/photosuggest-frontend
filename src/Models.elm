@@ -7,7 +7,6 @@ import Array exposing (Array)
 
 type Route
     = HomeRoute (Maybe String) (Maybe String)
-    | AboutRoute
     | NotFoundRoute
 
 
