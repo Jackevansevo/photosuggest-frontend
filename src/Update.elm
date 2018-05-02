@@ -7,7 +7,6 @@ import Navigation exposing (newUrl)
 import Commands exposing (searchImage)
 import RemoteData exposing (RemoteData(..))
 import Dom
-import Dom.Scroll
 import Task
 import Dict
 import Array
